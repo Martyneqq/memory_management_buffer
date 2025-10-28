@@ -1,0 +1,5 @@
+C:/Users/cepel/Desktop/personal_C++/SCS_test/out/build/x64-debug/CMakeFiles/edit_cache.dir
+C:/Users/cepel/Desktop/personal_C++/SCS_test/out/build/x64-debug/CMakeFiles/rebuild_cache.dir
+C:/Users/cepel/Desktop/personal_C++/SCS_test/out/build/x64-debug/SCS_test/CMakeFiles/SCS_test.dir
+C:/Users/cepel/Desktop/personal_C++/SCS_test/out/build/x64-debug/SCS_test/CMakeFiles/edit_cache.dir
+C:/Users/cepel/Desktop/personal_C++/SCS_test/out/build/x64-debug/SCS_test/CMakeFiles/rebuild_cache.dir
