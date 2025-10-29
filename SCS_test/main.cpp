@@ -11,7 +11,7 @@ struct Q {
 	std::uint16_t head;
 	std::uint16_t tail;
 	std::uint16_t index_position;
-	std::uint8_t read_offset;
+	std::uint16_t read_offset;
 };
 
 const uint16_t DATA_SIZE = CHUNK_SIZE - sizeof(std::uint16_t);
