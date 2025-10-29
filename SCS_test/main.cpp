@@ -4,21 +4,57 @@
 
 #define MAX_QUEUES 64
 #define MEMORY_SIZE 2048
-#define PAGE_SIZE 8
+#define CHUNK_SIZE 8
 
-struct SubQueue {
-	std::uint16_t start_id;
+
+struct Queue {
+	std::uint16_t head;
+	std::uint16_t tail;
 	std::uint16_t size;
 };
 
+struct DataChunk {
+	unsigned char data[6];
+	std::uint16_t next;
+};
+
+static std::uint16_t free_list_head = 0;
+
 typedef std::uint16_t Q;
 
-const size_t METADATA_POOL_SIZE = MAX_QUEUES * (sizeof(SubQueue) / sizeof(unsigned char));
+const size_t METADATA_POOL_SIZE = MAX_QUEUES * (sizeof(Queue) / sizeof(unsigned char));
 const size_t DATA_POOL_START = METADATA_POOL_SIZE;
 
 unsigned char data[MEMORY_SIZE];
 
 static std::uint16_t queue_counter = 0;
+
+void init_chunks() {
+	const size_t TOTAL_CHUNKS = (MEMORY_SIZE - DATA_POOL_START) / CHUNK_SIZE;
+	free_list_head = DATA_POOL_START;
+
+	for (size_t i = 0; i < TOTAL_CHUNKS; ++i)
+	{
+		size_t current_chunk_index = DATA_POOL_START + (i * CHUNK_SIZE);
+
+		DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[current_chunk_index]);
+		
+		size_t next_chunk_index = DATA_POOL_START + ((i+1) * CHUNK_SIZE);
+
+		if (i < TOTAL_CHUNKS - 1)
+		{
+			current_chunk->next = next_chunk_index;
+		}
+		else
+		{
+			current_chunk->next = NULL;
+		}
+
+		std::cout << "Chunk: " << i << " created. It points to: " << current_chunk->next << std::endl;
+	}
+
+	std::cout << "Memory allocated. " << "Free list head: " << free_list_head << std::endl;
+}
 
 // Handle out of memory exceptions
 void on_out_of_memory() {
@@ -31,64 +67,55 @@ void on_illegal_operation() {
 
 // Creates a FIFO byte queue, returning a handle to it.
 Q* create_queue() {
-	size_t sq_byte_index = (queue_counter * (sizeof(SubQueue)/sizeof(unsigned char)));
+	size_t index = free_list_head;
+	Queue* sq_ptr = reinterpret_cast<Queue*>(&data[index]);
+	DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[index]);
 
-	if (sq_byte_index >= DATA_POOL_START) {
-		on_out_of_memory();
-		return nullptr;
-	}
-
-	SubQueue* sq_ptr = reinterpret_cast<SubQueue*>(&data[sq_byte_index]);
-	sq_ptr->start_id = DATA_POOL_START + (queue_counter * PAGE_SIZE);
+	sq_ptr->head = index;
+	sq_ptr->tail = sq_ptr->head;
 	sq_ptr->size = 0;
 
-	if (sq_ptr->start_id + PAGE_SIZE > MEMORY_SIZE) {
+	if (current_chunk->next == NULL) {
 		on_out_of_memory();
-		queue_counter--;
 		return nullptr;
 	}
 
-	std::cout << "Sub queue created at: " << sq_ptr << std::endl;
+	std::cout << "Queue created at: " << sq_ptr << ". Head at: " << sq_ptr->head << ". Tail at: " << sq_ptr->tail << ". Size: " << sq_ptr->size << std::endl;
 
-	queue_counter++;
+	free_list_head = current_chunk->next;
 
 	return reinterpret_cast<Q*>(sq_ptr);
 }
 // Destroy an earlier created byte queue.
-void destroy_queue(Q* q) {
-	SubQueue* sq_ptr = reinterpret_cast<SubQueue*>(q);
+/*void destroy_queue(Q* q) {
+	Queue* sq_ptr = reinterpret_cast<Queue*>(q);
 
 	sq_ptr->start_id = 0;
 	sq_ptr->size = 0;
-}
+}*/
 // Adds a new byte to a queue.
 void enqueue_byte(Q* q, unsigned char b) {
-	SubQueue* sq_ptr = reinterpret_cast<SubQueue*>(q);
+	Queue* sq_ptr = reinterpret_cast<Queue*>(q);
 
-	if (sq_ptr->size >= PAGE_SIZE) {
-		on_out_of_memory();
-	}
-	if (sq_ptr->start_id >= MEMORY_SIZE) {
-		on_out_of_memory();
-	}
+	std::uint16_t sq_byte_count = sq_ptr->size % CHUNK_SIZE;
 
-	std::uint16_t relative_offset = sq_ptr->size % PAGE_SIZE;
-	std::uint16_t absolute_index = sq_ptr->start_id + relative_offset;
+	DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[sq_ptr->tail]);
 
-	if (absolute_index >= MEMORY_SIZE) {
-		on_out_of_memory();
-		return;
+	if (sq_byte_count == 0 && sq_ptr->size > 0) {
+
+		size_t index = free_list_head;
+		//free_list_head = ;
 	}
 
-	data[absolute_index] = b;
+	current_chunk->data[sq_byte_count] = b;
 
 	sq_ptr->size++;
 
-	std::cout << "Enqueued '" << (int)b << "' into queue at " << absolute_index << ". New size: " << sq_ptr->size << std::endl;
+	//std::cout << "Enqueued '" << (int)b << "' into queue at " << absolute_index << ". New size: " << sq_ptr->size << std::endl;
 }
 // Pops the next byte off the FIFO queue.
-unsigned char dequeue_byte(Q* q) {
-	SubQueue* sq_ptr = reinterpret_cast<SubQueue*>(q);
+/*unsigned char dequeue_byte(Q* q) {
+	Queue* sq_ptr = reinterpret_cast<Queue*>(q);
 
 	if (sq_ptr->size == 0) {
 		on_illegal_operation();
@@ -101,13 +128,14 @@ unsigned char dequeue_byte(Q* q) {
 	sq_ptr->size--;
 
 	return dequeued_byte;
-}
+}*/
 
 int main()
 {	
-	
+	init_chunks();
 
-	for (size_t i = 0; i < 63; i++)
+
+	/*for (size_t i = 0; i < 63; i++)
 	{
 		Q* q = create_queue();
 		for (size_t j = 0; j < 12; j++)
@@ -122,9 +150,18 @@ int main()
 		if (i == 12) {
 			destroy_queue(q);
 		}
-	}
+	}*/
 
-	/*Q* q0 = create_queue();
+	Q* q0 = create_queue();
+	Q* q1 = create_queue();
+
+	std::cout << "Free list head: " << free_list_head << std::endl;
+
+	enqueue_byte(q0, 0);
+	enqueue_byte(q0, 1);
+
+	/*
+	Q* q0 = create_queue();
 	enqueue_byte(q0, 0);
 	enqueue_byte(q0, 1);
 	Q* q1 = create_queue();
