@@ -7,7 +7,7 @@
 #define CHUNK_SIZE 8
 
 
-struct Queue {
+struct Q {
 	std::uint16_t head;
 	std::uint16_t tail;
 	std::uint16_t index_position;
@@ -23,9 +23,7 @@ struct DataChunk {
 
 static std::uint16_t free_list_head = 0;
 
-typedef std::uint16_t Q;
-
-const size_t METADATA_POOL_SIZE = MAX_QUEUES * (sizeof(Queue) / sizeof(unsigned char));
+const size_t METADATA_POOL_SIZE = MAX_QUEUES * (sizeof(Q) / sizeof(unsigned char));
 const size_t DATA_POOL_START = METADATA_POOL_SIZE;
 
 unsigned char data[MEMORY_SIZE];
@@ -72,8 +70,8 @@ void on_illegal_operation() {
 Q* create_queue() {
 	std::uint16_t metadata_id = queue_counter;
 
-	size_t sq_byte_index = metadata_id * (sizeof(Queue) / sizeof(unsigned char));
-	Queue* sq_ptr = reinterpret_cast<Queue*>(&data[sq_byte_index]);
+	size_t sq_byte_index = metadata_id * (sizeof(Q) / sizeof(unsigned char));
+	Q* q_ptr = reinterpret_cast<Q*>(&data[sq_byte_index]);
 
 	if (free_list_head == 0) {
 		on_out_of_memory();
@@ -87,29 +85,29 @@ Q* create_queue() {
 
 	current_chunk->next = 0;
 
-	sq_ptr->head = chunk_index;
-	sq_ptr->tail = chunk_index;
-	sq_ptr->index_position = 0;
+	q_ptr->head = chunk_index;
+	q_ptr->tail = chunk_index;
+	q_ptr->index_position = 0;
 
-	// std::cout << "Queue created at: " << sq_ptr << ". Head at: " << sq_ptr->head << ". Tail at: " << sq_ptr->tail << ". Size: " << sq_ptr->index_position << std::endl;
+	// std::cout << "Queue created at: " << q_ptr << ". Head at: " << q_ptr->head << ". Tail at: " << q_ptr->tail << ". Size: " << q_ptr->index_position << std::endl;
 
 	queue_counter++;
-	return reinterpret_cast<Q*>(sq_ptr);
+	return q_ptr;
 }
 // Destroy an earlier created byte queue.
 void destroy_queue(Q* q) {
-	Queue* sq_ptr = reinterpret_cast<Queue*>(q);
+	Q* q_ptr = reinterpret_cast<Q*>(q);
 
-	std::uint16_t C_first_index = sq_ptr->head;
-	std::uint16_t C_size = sq_ptr->tail;
+	std::uint16_t C_first_index = q_ptr->head;
+	std::uint16_t C_size = q_ptr->tail;
 
 	DataChunk* tail_chunk = reinterpret_cast<DataChunk*>(&data[C_size]);
 
-	if (sq_ptr->index_position == 0 || sq_ptr->head == 0) {
-		sq_ptr->head = 0;
-		sq_ptr->tail = 0;
-		sq_ptr->index_position = 0;
-		// std::cout << "Queue " << sq_ptr << " successfully destroyed" << std::endl;
+	if (q_ptr->index_position == 0 || q_ptr->head == 0) {
+		q_ptr->head = 0;
+		q_ptr->tail = 0;
+		q_ptr->index_position = 0;
+		// std::cout << "Queue " << q_ptr << " successfully destroyed" << std::endl;
 		return;
 	}
 
@@ -119,21 +117,21 @@ void destroy_queue(Q* q) {
 
 	free_list_head = C_first_index;
 
-	sq_ptr->head = 0;
-	sq_ptr->tail = 0;
-	sq_ptr->index_position = 0;
-	sq_ptr->read_offset = 0;
+	q_ptr->head = 0;
+	q_ptr->tail = 0;
+	q_ptr->index_position = 0;
+	q_ptr->read_offset = 0;
 
-	// std::cout << "Queue " << sq_ptr << " successfully destroyed" << std::endl;
+	// std::cout << "Queue " << q_ptr << " successfully destroyed" << std::endl;
 }
 // Adds a new byte to a queue.
 void enqueue_byte(Q* q, unsigned char b) {
-	Queue* sq_ptr = reinterpret_cast<Queue*>(q);
-	DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[sq_ptr->tail]);
+	Q* q_ptr = reinterpret_cast<Q*>(q);
+	DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[q_ptr->tail]);
 
-	std::uint16_t byte_offset = sq_ptr->index_position % DATA_SIZE;
+	std::uint16_t byte_offset = q_ptr->index_position % DATA_SIZE;
 
-	if (byte_offset == 0 && sq_ptr->index_position > 0) {
+	if (byte_offset == 0 && q_ptr->index_position > 0) {
 		std::uint16_t new_chunk_index = free_list_head;
 
 		if (new_chunk_index == 0) {
@@ -148,41 +146,41 @@ void enqueue_byte(Q* q, unsigned char b) {
 
 		current_chunk->next = new_chunk_index;
 
-		sq_ptr->tail = new_chunk_index;
+		q_ptr->tail = new_chunk_index;
 
 		current_chunk = new_chunk;
 	}
 
 	current_chunk->data[byte_offset] = b;
-	sq_ptr->index_position++;
+	q_ptr->index_position++;
 
-	// std::cout << "Enqueued '" << (int)b << "'. Tail at " << sq_ptr->tail << ". Local offset " << byte_offset << ". New size: " << sq_ptr->index_position << std::endl;
+	// std::cout << "Enqueued '" << (int)b << "'. Tail at " << q_ptr->tail << ". Local offset " << byte_offset << ". New size: " << q_ptr->index_position << std::endl;
 }
 // Pops the next byte off the FIFO queue.
 unsigned char dequeue_byte(Q* q) {
-	Queue* sq_ptr = reinterpret_cast<Queue*>(q);
+	Q* q_ptr = reinterpret_cast<Q*>(q);
 
-	if (sq_ptr->index_position == 0) {
+	if (q_ptr->index_position == 0) {
 		on_illegal_operation();
 		return 0;
 	}
 
-	DataChunk* head_chunk = reinterpret_cast<DataChunk*>(&data[sq_ptr->head]);
+	DataChunk* head_chunk = reinterpret_cast<DataChunk*>(&data[q_ptr->head]);
 
-	unsigned char dequeued_byte = head_chunk->data[sq_ptr->read_offset];
+	unsigned char dequeued_byte = head_chunk->data[q_ptr->read_offset];
 
-	sq_ptr->read_offset++;
+	q_ptr->read_offset++;
 
-	if (sq_ptr->read_offset >= DATA_SIZE) {
+	if (q_ptr->read_offset >= DATA_SIZE) {
 
-		std::uint16_t old_chunk_index = sq_ptr->head;
+		std::uint16_t old_chunk_index = q_ptr->head;
 
-		sq_ptr->head = head_chunk->next;
+		q_ptr->head = head_chunk->next;
 
 		head_chunk->next = free_list_head;
 		free_list_head = old_chunk_index;
 
-		sq_ptr->read_offset = 0;
+		q_ptr->read_offset = 0;
 	}
 
 	return dequeued_byte;
