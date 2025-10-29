@@ -23,18 +23,18 @@ struct DataChunk {
 
 static std::uint16_t free_list_head = 0;
 
-const size_t METADATA_POOL_SIZE = MAX_QUEUES * (sizeof(Q) / sizeof(unsigned char));
-const size_t DATA_POOL_START = METADATA_POOL_SIZE;
+const uint16_t METADATA_POOL_SIZE = MAX_QUEUES * (sizeof(Q) / sizeof(unsigned char));
+const uint16_t DATA_POOL_START = METADATA_POOL_SIZE;
 
 unsigned char data[MEMORY_SIZE];
 
 static std::uint16_t queue_counter = 0;
 
 void init_chunks() {
-	const size_t TOTAL_CHUNKS = (MEMORY_SIZE - DATA_POOL_START) / CHUNK_SIZE;
+	const uint16_t TOTAL_CHUNKS = (MEMORY_SIZE - DATA_POOL_START) / CHUNK_SIZE;
 	free_list_head = DATA_POOL_START;
 
-	for (size_t i = 0; i < TOTAL_CHUNKS; ++i)
+	for (uint16_t i = 0; i < TOTAL_CHUNKS; ++i)
 	{
 		std::uint16_t current_chunk_index = DATA_POOL_START + (i * CHUNK_SIZE);
 
@@ -70,14 +70,14 @@ void on_illegal_operation() {
 Q* create_queue() {
 	std::uint16_t metadata_id = queue_counter;
 
-	size_t sq_byte_index = metadata_id * (sizeof(Q) / sizeof(unsigned char));
+	uint16_t sq_byte_index = metadata_id * (sizeof(Q) / sizeof(unsigned char));
 	Q* q_ptr = reinterpret_cast<Q*>(&data[sq_byte_index]);
 
 	if (free_list_head == 0) {
 		on_out_of_memory();
 	}
 
-	size_t chunk_index = free_list_head;
+	uint16_t chunk_index = free_list_head;
 
 	DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[chunk_index]);
 
