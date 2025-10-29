@@ -1,7 +1,6 @@
 ﻿#include <iostream>
 #include <list>
 #include <queue>
-#include <chrono>
 
 #define MAX_QUEUES 64
 #define MEMORY_SIZE 2048
@@ -189,37 +188,11 @@ unsigned char dequeue_byte(Q* q) {
 	return dequeued_byte;
 }
 
-typedef std::chrono::high_resolution_clock Time;
-typedef std::chrono::milliseconds ms;
-typedef std::chrono::duration<float> fsec;
-
 int main()
 {	
-	auto t0 = Time::now();
-
 	init_chunks();
 
-
-	for (size_t i = 0; i < 15; i++)
-	{
-		Q* q = create_queue();
-		for (size_t j = 0; j < 80; j++)
-		{
-			enqueue_byte(q, j);
-		}
-		for (size_t j = 0; j < 80; j++)
-		{
-			printf("%d", dequeue_byte(q));
-			printf("\n");
-		}
-	}
-
-	std::cout << "MEMORY: ([METADATA: " << METADATA_POOL_SIZE
-		<< "] | [POINTERS: " << 0.25 * (MEMORY_SIZE - DATA_POOL_START) 
-		<< "] | [FREE:" << 0.75*(MEMORY_SIZE - DATA_POOL_START) 
-		<< "])" << std::endl;
-
-	/*Q* q0 = create_queue();
+	Q* q0 = create_queue();
 	enqueue_byte(q0, 0);
 	enqueue_byte(q0, 1);
 	Q* q1 = create_queue();
@@ -236,10 +209,5 @@ int main()
 	printf("%d", dequeue_byte(q1));
 	printf("%d", dequeue_byte(q1));
 	printf("%d\n", dequeue_byte(q1));
-	destroy_queue(q1);*/
-
-	auto t1 = Time::now();
-	fsec fs = t1 - t0;
-	ms d = std::chrono::duration_cast<ms>(fs);
-	std::cout << d.count() << "ms\n";
+	destroy_queue(q1);
 }
