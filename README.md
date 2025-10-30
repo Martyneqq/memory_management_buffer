@@ -22,12 +22,20 @@ In this project, I implemented a memory managing structure, that does not use he
 
 ## Functions
 + init_chunks
-  - 
-  <img width="2192" height="504" alt="2" src="https://github.com/user-attachments/assets/9faf14ca-a4f0-49b3-b754-180529c19ac8" />
-+ create_queue
-+ destroy_queue
-+ enqueue_byte
-+ dequeue_byte
-+ on_out_of_memory
-+ on_illegal_operation
+  - initialize all of the chunks in the data segment, connect them with their pointers. At the position of the first chunk points free_list_head static variable
+  <img width="2192" height="504" alt="2" src="https://github.com/user-attachments/assets/27be06a9-79f5-47d2-b752-79f384dad405" />
 
++ create_queue
+  - in the metadata section, allocate space for a queue at position 0 in data array (next will be at position 8 because queue is 8 bytes long)
+  - now, first chunk from the free chunk chain will be given to this queue to save its data. The chunk will receive position at the start of the free list. free_list_head's pointer is adjusted to point to the next chunk. This chunk will point to 0 to indicate the end of the queue.
+  <img width="2192" height="504" alt="3" src="https://github.com/user-attachments/assets/0621a86d-1671-4990-af61-84993a61f970" />
+
++ destroy_queue
+  - reattach current chunk to the free chain and adjust free_list_head to this chunk
+  <img width="2192" height="504" alt="4" src="https://github.com/user-attachments/assets/a8c2939b-d84f-4314-a2cf-19864db7139e" />
+
++ enqueue_byte
+  
+  
++ dequeue_byte
+  
