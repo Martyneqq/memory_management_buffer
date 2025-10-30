@@ -70,8 +70,8 @@ void on_illegal_operation() {
 Q* create_queue() {
 	std::uint16_t metadata_id = queue_counter;
 
-	uint16_t sq_byte_index = metadata_id * (sizeof(Q) / sizeof(unsigned char));
-	Q* q_ptr = reinterpret_cast<Q*>(&data[sq_byte_index]);
+	uint16_t q_byte_index = metadata_id * (sizeof(Q) / sizeof(unsigned char));
+	Q* q_ptr = reinterpret_cast<Q*>(&data[q_byte_index]);
 
 	if (free_list_head == 0) {
 		on_out_of_memory();
@@ -96,42 +96,38 @@ Q* create_queue() {
 }
 // Destroy an earlier created byte queue.
 void destroy_queue(Q* q) {
-	Q* q_ptr = reinterpret_cast<Q*>(q);
 
-	std::uint16_t C_first_index = q_ptr->head;
-	std::uint16_t C_size = q_ptr->tail;
+	std::uint16_t q_first_index = q->head;
+	std::uint16_t q_size = q->tail;
 
-	DataChunk* tail_chunk = reinterpret_cast<DataChunk*>(&data[C_size]);
-
-	if (q_ptr->index_position == 0 || q_ptr->head == 0) {
-		q_ptr->head = 0;
-		q_ptr->tail = 0;
-		q_ptr->index_position = 0;
+	if (q->index_position == 0 || q->head == 0) {
+		q->head = 0;
+		q->tail = 0;
+		q->index_position = 0;
 		// std::cout << "Queue " << q_ptr << " successfully destroyed" << std::endl;
 		return;
 	}
 
-	DataChunk* C_last_ptr = reinterpret_cast<DataChunk*>(&data[C_size]);
+	DataChunk* tail_chunk = reinterpret_cast<DataChunk*>(&data[q_size]);
 
-	C_last_ptr->next = free_list_head;
+	tail_chunk->next = free_list_head;
+	free_list_head = q_first_index;
 
-	free_list_head = C_first_index;
+	q->head = 0;
+	q->tail = 0;
+	q->index_position = 0;
+	q->read_offset = 0;
 
-	q_ptr->head = 0;
-	q_ptr->tail = 0;
-	q_ptr->index_position = 0;
-	q_ptr->read_offset = 0;
-
-	// std::cout << "Queue " << q_ptr << " successfully destroyed" << std::endl;
+	// std::cout << "Queue " << q << " successfully destroyed" << std::endl;
 }
 // Adds a new byte to a queue.
 void enqueue_byte(Q* q, unsigned char b) {
-	Q* q_ptr = reinterpret_cast<Q*>(q);
-	DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[q_ptr->tail]);
 
-	std::uint16_t byte_offset = q_ptr->index_position % DATA_SIZE;
+	DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[q->tail]);
 
-	if (byte_offset == 0 && q_ptr->index_position > 0) {
+	std::uint16_t byte_offset = q->index_position % DATA_SIZE;
+
+	if (byte_offset == 0 && q->index_position > 0) {
 		std::uint16_t new_chunk_index = free_list_head;
 
 		if (new_chunk_index == 0) {
@@ -145,42 +141,40 @@ void enqueue_byte(Q* q, unsigned char b) {
 		new_chunk->next = 0;
 
 		current_chunk->next = new_chunk_index;
-
-		q_ptr->tail = new_chunk_index;
+		q->tail = new_chunk_index;
 
 		current_chunk = new_chunk;
 	}
 
 	current_chunk->data[byte_offset] = b;
-	q_ptr->index_position++;
+	q->index_position++;
 
 	// std::cout << "Enqueued '" << (int)b << "'. Tail at " << q_ptr->tail << ". Local offset " << byte_offset << ". New size: " << q_ptr->index_position << std::endl;
 }
 // Pops the next byte off the FIFO queue.
 unsigned char dequeue_byte(Q* q) {
-	Q* q_ptr = reinterpret_cast<Q*>(q);
 
-	if (q_ptr->index_position == 0) {
+	if (q->index_position == 0) {
 		on_illegal_operation();
 		return 0;
 	}
 
-	DataChunk* head_chunk = reinterpret_cast<DataChunk*>(&data[q_ptr->head]);
+	DataChunk* head_chunk = reinterpret_cast<DataChunk*>(&data[q->head]);
 
-	unsigned char dequeued_byte = head_chunk->data[q_ptr->read_offset];
+	unsigned char dequeued_byte = head_chunk->data[q->read_offset];
 
-	q_ptr->read_offset++;
+	q->read_offset++;
 
-	if (q_ptr->read_offset >= DATA_SIZE) {
+	if (q->read_offset >= DATA_SIZE) {
 
-		std::uint16_t old_chunk_index = q_ptr->head;
+		std::uint16_t old_chunk_index = q->head;
 
-		q_ptr->head = head_chunk->next;
+		q->head = head_chunk->next;
 
 		head_chunk->next = free_list_head;
 		free_list_head = old_chunk_index;
 
-		q_ptr->read_offset = 0;
+		q->read_offset = 0;
 	}
 
 	return dequeued_byte;
