@@ -31,6 +31,7 @@ unsigned char data[MEMORY_SIZE];
 static std::uint16_t queue_counter = 0;
 
 void init_chunks() {
+
 	const uint16_t TOTAL_CHUNKS = (MEMORY_SIZE - DATA_POOL_START) / CHUNK_SIZE;
 	free_list_head = DATA_POOL_START;
 
@@ -68,6 +69,7 @@ void on_illegal_operation() {
 
 // Creates a FIFO byte queue, returning a handle to it.
 Q* create_queue() {
+
 	std::uint16_t metadata_id = queue_counter;
 
 	uint16_t q_byte_index = metadata_id * (sizeof(Q) / sizeof(unsigned char));
