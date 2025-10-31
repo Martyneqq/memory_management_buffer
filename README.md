@@ -7,7 +7,7 @@
 7. make
 
 # Documentation
-In this project, I implemented a memory managing structure, that does not use heap memory for its allocation. Everything is stored in one array with size of 2048 bytes. The main focus is on efficiently combining speed and memory. All of the operations on the queue are O(1). However, the struct has to be initialized with O(n) time at the beginning, which is a small price to pay in comparison with the enqueue/dequeue speed (O(1)). Most of the data types are std::uint16_t to save as much memory as possible.
+In this project, I implemented a memory managing structure, that does not use heap memory for its allocation. Everything is stored in one array with size of 2048 bytes. The main focus is on efficiently combining speed and memory. All of the operations on the queue are O(1). However, the struct has to be initialized with O(n) time at the beginning, which is a small price to pay in comparison with the enqueue/dequeue speed (O(1)). Most of the data types are std::uint16_t to save as much memory as possible. In total, about 43% of the array is used as a metadata/pointer storage, which is justified for it's speed
 <img width="2192" height="504" alt="1" src="https://github.com/user-attachments/assets/9a86a6bd-a6a1-47ef-a0c4-364d522301a7" />
 
 ## Structs
