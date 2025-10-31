@@ -19,12 +19,13 @@ const uint16_t DATA_SIZE = CHUNK_SIZE - sizeof(std::uint16_t);
 struct DataChunk {
 	unsigned char data[DATA_SIZE];
 	std::uint16_t next;
-};
+} data_chunk;
 
 static std::uint16_t free_list_head = 0;
 
 const uint16_t METADATA_POOL_SIZE = MAX_QUEUES * (sizeof(Q) / sizeof(unsigned char));
 const uint16_t DATA_POOL_START = METADATA_POOL_SIZE;
+const uint16_t TOTAL_CHUNKS = (MEMORY_SIZE - DATA_POOL_START) / CHUNK_SIZE;
 
 unsigned char data[MEMORY_SIZE];
 
@@ -32,7 +33,6 @@ static std::uint16_t queue_counter = 0;
 
 void init_chunks() {
 
-	const uint16_t TOTAL_CHUNKS = (MEMORY_SIZE - DATA_POOL_START) / CHUNK_SIZE;
 	free_list_head = DATA_POOL_START;
 
 	for (uint16_t i = 0; i < TOTAL_CHUNKS; ++i)
@@ -204,4 +204,9 @@ int main()
 	printf("%d", dequeue_byte(q1));
 	printf("%d\n", dequeue_byte(q1));
 	destroy_queue(q1);
+
+	std::uint16_t DATA_SEGMENT = TOTAL_CHUNKS * sizeof(data_chunk.data);
+	std::uint16_t POINTER_SEGMENT = TOTAL_CHUNKS * sizeof(data_chunk.next);
+	std::cout << "\nMemory:\n";
+	std::cout << "[Queues/pointers: " << METADATA_POOL_SIZE + POINTER_SEGMENT << " bytes]\n[Free: " << DATA_SEGMENT << " bytes]\n";
 }
