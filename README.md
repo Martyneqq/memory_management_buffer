@@ -39,6 +39,9 @@ In this project, I implemented a memory managing structure, that does not use he
 
 + enqueue_byte
   - time complexity: O(1)
+  <img width="2192" height="966" alt="5" src="https://github.com/user-attachments/assets/10c2c13d-8299-4681-92a2-ed5f5e779657" />
+
   
 + dequeue_byte
   - time complexity: O(1)
+  <img width="2192" height="966" alt="6" src="https://github.com/user-attachments/assets/d0c377f9-1391-42dd-9e2e-6c4d0ce0bd82" />
