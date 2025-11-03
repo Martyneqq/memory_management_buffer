@@ -61,10 +61,12 @@ void init_chunks() {
 // Handle out of memory exceptions
 void on_out_of_memory() {
 	std::cout << "Out of memory\n";
+	std::exit(EXIT_FAILURE);
 }
 // Handle illegal requests
 void on_illegal_operation() {
 	std::cout << "Illegal operation\n";
+	std::exit(EXIT_FAILURE);
 }
 
 // Creates a FIFO byte queue, returning a handle to it.
@@ -101,7 +103,6 @@ void destroy_queue(Q* q) {
 
 	if (q->destroyed) {
 		on_illegal_operation();
-		return;
 	}
 
 	std::uint16_t q_first_index = q->head;
@@ -134,7 +135,6 @@ void enqueue_byte(Q* q, unsigned char b) {
 	if (q->destroyed)
 	{
 		on_illegal_operation();
-		return;
 	}
 
 	DataChunk* current_chunk = reinterpret_cast<DataChunk*>(&data[q->tail]);
@@ -146,7 +146,6 @@ void enqueue_byte(Q* q, unsigned char b) {
 
 		if (new_chunk_index == 0) {
 			on_out_of_memory();
-			return;
 		}
 
 		DataChunk* new_chunk = reinterpret_cast<DataChunk*>(&data[new_chunk_index]);
@@ -170,7 +169,6 @@ unsigned char dequeue_byte(Q* q) {
 
 	if (q->destroyed || q->index_position == 0) {
 		on_illegal_operation();
-		return 0;
 	}
 
 	DataChunk* head_chunk = reinterpret_cast<DataChunk*>(&data[q->head]);
